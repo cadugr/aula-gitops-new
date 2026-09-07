@@ -1,22 +1,42 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: webcolor
+  name: web-color
   namespace: argocd
-  labels:
-    curso: gitops
 spec:
   project: default
   source:
     repoURL: https://github.com/cadugr/web-page-deploy.git
     path: k8s
     targetRevision: HEAD
-    directory:
-      recurse: true
-      include: '{nginx/*}'
+  #define a quantidade de revisões que o ArgoCD vai manter do deploy, para não ocupar muito espaço no cluster.  Dica: deixar o default que é 10.
+  revisionHistoryLimit: 4 
+  #com esta propriedade, o ArgoCD vai fazer o deploy automaticamente quando houver alterações no repositório  
+  syncPolicy:
+    automated:
+      enabled: true
+      #habilita a opção de auto-prune, que remove recursos que não estão mais no repositório
+      prune: true
+      #permite que caso não tenha mais nenhum manifesto em /k8s, o ArgoCD não considere isso um erro e faça o deploy mesmo assim, excluindo recursos que não estão mais no repositório
+      allowEmpty: true
+      #habilita a opção de auto-heal, que faz o ArgoCD corrigir recursos que foram alterados manualmente no cluster.  Dica: deixar sempre habilitado, para não ter problemas com alterações manuais que podem quebrar o deploy.
+      selfHeal: true
+    syncOptions:
+      # habilita a opção de validação do deploy, para garantir que os recursos estão corretos antes de serem aplicados no cluster
+      - Validate=true
+      # habilita a opção de criar o namespace automaticamente caso ele não exista, para evitar erros de deploy
+      - CreateNamespace=true
+      # habilita as aopções de exclusão de objetos que não tenham mais referência no repositório.
+      # 1 - foreground: vai excluir primeiro os recursos filhos e depois o recurso pai, garantindo que não haja recursos órfãos no cluster.  Processo mais lento, mas mais seguro.
+      # 2 - background: vai excluir primeiro o recurso pai e depois os recursos filhos, podendo deixar recursos órfãos no cluster.  Processo mais rápido, mas menos seguro.
+      # 3 - orphan: vai excluir apenas o recurso pai, deixando os recursos filhos órfãos
+      - PrunePropagationPolicy=orphan
+      # Significa que vai ser a última coisa a ser feita, depois de todas as outras opções de sync.  Útil para garantir que o ArgoCD não tente excluir recursos que ainda estão sendo criados ou atualizados.
+      - PruneLast=true
+      # Habilita a opção de respeitar as diferenças ignoradas, para que o ArgoCD não tente corrigir recursos que foram alterados manualmente no cluster.  Útil para evitar problemas com alterações manuais que podem quebrar o deploy.
+      - RespectIgnoreDifferences=true
+      # Os objetos que serão aplicaos são apenas aqueles que estão fora de sincronia com o repositório, evitando que o ArgoCD tente aplicar recursos que já estão corretos no cluster.  Útil para evitar problemas com alterações manuais que podem quebrar o deploy.
+      - ApplyOutOfSyncOnly=true
   destination:
     server: https://kubernetes.default.svc
-    namespace: webcolor
-  info:
-    - name: Projeto
-      value: "Curso de GitOps com ArgoCD"
+    namespace: web-color

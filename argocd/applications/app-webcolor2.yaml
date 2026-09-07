@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: webcolor
+  namespace: argocd
+spec:
+  project: exemplo-project
+  source:
+    repoURL: https://github.com/cadugr/web-page-deploy.git
+    path: k8s
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: webcolor

@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: exemplo-project
+  namespace: argocd
+spec:
+  # Até o destinations é a estrutura básica de um projeto.
+  description: Projeto de exemplo para o curso de GitOps com ArgoCD
+  # É a lista de repositórios que este projeto pode acessar.  Dica: deixar apenas os repositórios que serão utilizados, para evitar problemas de segurança. 
+  sourceRepos:
+    - "https://github.com/cadugr/*"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "webcolor" 
+  clusterResourceWhitelist: # white list no escopo de cluster.
+    - group: ""
+      kind: "Namespace"
+  # namespaceResourceWhitelist: # white list no escopo de namespace.
+  #   - group: "*"
+  #     kind: "*"
+    # - group: apps
+    #   kind: ReplicaSet   
+    # - group: ""
+    #   kind: Pod 
+    # - group: ""
+    #   kind: Service  
+  # namespaceResourceBlacklist: # black list no escopo de namespace.
+  #   - group: "networking.k8s.io"
+  #     kind: "Ingress"    
+  # Podemos aceitar uma lista de permissões e de bloqueios.  Essa janela de sincronização permite que façamos a sincronização de forma automática dentro da janela.
+  syncWindows:
+    - kind: allow
+      timeZone: "America/Sao_Paulo"
+      schedule: "0 9 * * *" #início da janela de deploy, no caso 9h da manhã
+      duration: 12h # duração da janela de deploy, no caso 12h, ou seja, até 21h
+      manualSync: true # sincronização sendo feita de forma manual.
+      # applications:
+      # - "*" #aplicações que podem ser deployadas nesta janela, no caso todas
+      # Podemos também fazer janela de atualização por namespace.
+      # namespaces:
+      # - "webcolor"
+      # Também é possível colocar a nível de cluster.
+      clusters:
+        - https://kubernetes.default.svc
+
+

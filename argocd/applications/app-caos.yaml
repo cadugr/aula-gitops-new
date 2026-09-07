@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: caos
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/cadugr/web-page-deploy.git
+    path: caos
+    targetRevision: HEAD
+  destination:
+    namespace: caos
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: 
+      enabled: true
+      prune: true
+      selfHeal: true
+  # permite que o ArgoCD ignore diferenças em campos específicos, especialmente em se tratando de recursos dinamicamente escaláveis, como o número de réplicas de um Deployment ou o status de um HorizontalPodAutoscaler. Isso é útil para evitar que o ArgoCD tente corrigir automaticamente essas diferenças, que podem ser gerenciadas por outros mecanismos, como o HPA.    
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: web
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      name: web
+      jsonPointers:
+        - /status/currentReplicas
+        - /status/desiredReplicas       
